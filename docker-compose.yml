@@ -1,0 +1,33 @@
+version: '3'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  spark:
+    image: bitnami/spark:latest
+    depends_on:
+      - kafka
+    ports:
+      - "4040:4040"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      /bin/bash -c "spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0
+      spark_processor.py"
